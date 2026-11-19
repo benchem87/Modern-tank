@@ -52,15 +52,15 @@ const LEVELS = [
 "......................",
 "......................",
 "......................",
-"......##......##......",
-"......##......##......",
+"......xx......xx......",
+"......xx......xx......",
 "......................",
 "......................",
 "..P...............b...",
 "......................",
 "......................",
-"......##......##......",
-"......##......##......",
+"......xx......xx......",
+"......xx......xx......",
 "......................",
 "......................",
 "......................"],
@@ -69,13 +69,13 @@ const LEVELS = [
 "......................",
 "..................b...",
 ".........####.........",
-"............#.........",
-"............#.........",
-"............#.........",
+"............x.........",
+"............x.........",
+"............x.........",
 "..P.........x.....g...",
-"............#.........",
-"............#.........",
-"............#.........",
+"............x.........",
+"............x.........",
+"............x.........",
 ".........####.........",
 "..................b...",
 "......................",
@@ -309,6 +309,7 @@ const SFX = {
   win() { [523, 659, 784, 1046].forEach((f, i) => tone(f, .18, 'square', .07, null, i * .12)); },
   lose() { [392, 330, 262, 196].forEach((f, i) => tone(f, .22, 'triangle', .12, null, i * .16)); },
   click() { tone(800, .03, 'square', .04); },
+  crumble() { noise(.35, .4, 1500); tone(140, .2, 'triangle', .15, 60); },
 };
 
 /* ============================================================
@@ -524,14 +525,28 @@ function explodeMine(m) {
   for (const t of tanks) if (t.alive && hyp(t.x - m.x, t.y - m.y) < R + t.r * .3) killTank(t, m.owner);
   for (let ty = Math.floor(m.y - R); ty <= Math.floor(m.y + R); ty++)
     for (let tx = Math.floor(m.x - R); tx <= Math.floor(m.x + R); tx++) {
-      if (tx < 0 || ty < 0 || tx >= W || ty >= H || grid[ty][tx] !== 2) continue;
-      if (hyp(tx + .5 - m.x, ty + .5 - m.y) < R + .2) {
-        grid[ty][tx] = 0;
-        for (let i = 0; i < 10; i++) parts.push({ x: tx + .5, y: ty + .5, vx: rand(-3, 3), vy: rand(-3, 3), life: rand(.4, .9), max: .9, size: rand(.08, .18), kind: 'chip' });
-      }
+      if (tx < 0 || ty < 0 || tx >= W || ty >= H || grid[ty][tx] < 2) continue;
+      if (hyp(tx + .5 - m.x, ty + .5 - m.y) < R + .2) breakWall(tx, ty, true);
     }
   for (const b of bullets) if (hyp(b.x - m.x, b.y - m.y) < R) b.dead = true;
   for (const o of mines) if (!o.dead && o !== m && hyp(o.x - m.x, o.y - m.y) < R) o.timer = Math.min(o.timer, .12);
+}
+
+// murs clairs : 2 = intact, 3 = fissuré. Une balle les abîme, la 2e les casse.
+function breakWall(tx, ty, full) {
+  const g = grid[ty][tx];
+  if (g < 2) return;
+  const n = full || g === 3 ? 16 : 6;
+  for (let i = 0; i < n; i++) parts.push({ x: tx + .5 + rand(-.4, .4), y: ty + .5 + rand(-.4, .4), vx: rand(-3, 3), vy: rand(-3, 3), life: rand(.4, .9), max: .9, size: rand(.08, .2), kind: 'chip' });
+  if (full || g === 3) { grid[ty][tx] = 0; scorches.push({ x: tx + .5, y: ty + .5, a: 0, rubble: true }); shake = Math.max(shake, .12); SFX.crumble(); }
+  else { grid[ty][tx] = 3; SFX.small(); }
+}
+function hitBreakable(b, x, y) {
+  const tx = Math.floor(x), ty = Math.floor(y);
+  if (tx < 0 || ty < 0 || tx >= W || ty >= H || grid[ty][tx] < 2) return false;
+  breakWall(tx, ty, false);
+  b.dead = true;
+  return true;
 }
 
 function updateBullets(dt) {
@@ -541,9 +556,11 @@ function updateBullets(dt) {
     const sp = hyp(b.vx, b.vy), steps = Math.max(1, Math.ceil(sp * dt / .08)), h = dt / steps;
     for (let s = 0; s < steps && !b.dead; s++) {
       const nx = b.x + b.vx * h;
+      if (hitBreakable(b, nx, b.y)) break;
       if (solidAt(nx, b.y)) { if (b.b <= 0) { b.dead = true; puff(b.x, b.y); break; } b.vx = -b.vx; b.b--; b.bounced = true; SFX.bounce(); }
       else b.x = nx;
       const ny = b.y + b.vy * h;
+      if (hitBreakable(b, b.x, ny)) break;
       if (solidAt(b.x, ny)) { if (b.b <= 0) { b.dead = true; puff(b.x, b.y); break; } b.vy = -b.vy; b.b--; b.bounced = true; SFX.bounce(); }
       else b.y = ny;
       for (const t of tanks) {
@@ -932,6 +949,11 @@ function drawWorld() {
   // traces brûlées
   for (const s of scorches) {
     ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.a);
+    if (s.rubble) {
+      ctx.fillStyle = 'rgba(170,125,70,.45)';
+      for (let k = 0; k < 7; k++) { const a = k * 2.4 + s.x * 3, d = .15 + (k % 3) * .12; ctx.fillRect(Math.cos(a) * d - .05, Math.sin(a) * d - .05, .1, .1); }
+      ctx.restore(); continue;
+    }
     ctx.fillStyle = 'rgba(40,25,10,.28)'; circle(0, 0, s.big ? .9 : .55); ctx.fill();
     if (!s.big) { ctx.strokeStyle = 'rgba(30,20,10,.5)'; ctx.lineWidth = .12; ctx.beginPath(); ctx.moveTo(-.3, -.3); ctx.lineTo(.3, .3); ctx.moveTo(.3, -.3); ctx.lineTo(-.3, .3); ctx.stroke(); }
     ctx.restore();
@@ -987,6 +1009,12 @@ function drawWorld() {
       ctx.fillStyle = 'rgba(150,100,40,.45)';
       for (let k = 0; k < 6; k++) { const hx = ((x * 7 + y * 13 + k * 31) % 17) / 17, hy = ((x * 11 + y * 5 + k * 23) % 19) / 19; ctx.fillRect(x + .1 + hx * .75, y - lift + .1 + hy * .75, .07, .07); }
       ctx.strokeStyle = 'rgba(150,100,40,.45)'; ctx.lineWidth = .04; ctx.strokeRect(x + .05, y - lift + .05, .9, .9);
+      if (g === 3) {
+        const y0 = y - lift;
+        ctx.strokeStyle = 'rgba(90,55,20,.75)'; ctx.lineWidth = .05;
+        ctx.beginPath(); ctx.moveTo(x + .15, y0 + .2); ctx.lineTo(x + .45, y0 + .45); ctx.lineTo(x + .35, y0 + .7); ctx.lineTo(x + .6, y0 + .9);
+        ctx.moveTo(x + .45, y0 + .45); ctx.lineTo(x + .85, y0 + .35); ctx.moveTo(x + .62, y0 + .4); ctx.lineTo(x + .72, y0 + .12); ctx.stroke();
+      }
     }
   }
   // particules
@@ -1079,8 +1107,8 @@ function drawControls() {
     const al = Math.min(1, (7 - stateT) / 1.5);
     ctx.globalAlpha = al;
     const ty = OY + H * TS * .88;
-    text('← Glisse à gauche pour rouler', OX + W * TS * .27, ty, 14, '#fff');
-    text('Vise à droite, relâche pour tirer →', OX + W * TS * .72, ty, 14, '#fff');
+    text('← Glisse à gauche pour rouler', OX + W * TS / 2, ty - 22, 14, '#fff');
+    text('Vise à droite, relâche pour tirer →', OX + W * TS / 2, ty, 14, '#fff');
     ctx.globalAlpha = 1;
   }
 }
@@ -1102,7 +1130,7 @@ function drawScreens() {
       button(`Continuer · Mission ${best + 1}`, cx + 105, cy + 22 * s, 210, 46, () => startGame(best), true);
     } else button('JOUER', cx, cy + 22 * s, 200, 50, () => startGame(0), true);
     text('Gauche : rouler · Droite : viser puis relâcher pour tirer · Bouton jaune : mine', cx, cy + 82 * s, small ? 11 : 14, '#d9c9a8', 'center', 600);
-    text('Les balles rebondissent une fois. Les mines cassent les murs clairs.', cx, cy + 102 * s, small ? 11 : 14, '#d9c9a8', 'center', 600);
+    text('Les balles rebondissent sur les murs foncés et cassent les murs clairs (2 tirs).', cx, cy + 102 * s, small ? 11 : 14, '#d9c9a8', 'center', 600);
   } else if (state === 'intro') {
     overlay(.55);
     text(`MISSION ${level + 1}`, cx, cy - 50, 44, '#f2c84b');

@@ -20,9 +20,10 @@ Petit jeu de tanks en vue de dessus pour iPhone (et navigateur) : balles qui reb
 
 ## Règles
 
-- Tes balles rebondissent **une fois** sur les murs. Attention à ne pas te toucher toi-même !
+- Tes balles rebondissent **une fois** sur les murs foncés. Attention à ne pas te toucher toi-même !
 - Max 5 balles à l'écran et 2 mines à la fois.
-- Les mines explosent au bout de 10 s ou quand un tank passe dessus. Elles détruisent les **murs clairs**.
+- Les **murs clairs** se fissurent au 1er tir et se cassent au 2e. Les murs foncés sont indestructibles (les balles rebondissent dessus).
+- Les mines explosent au bout de 10 s ou quand un tank passe dessus, et cassent tous les murs clairs autour.
 - Une vie bonus toutes les 5 missions. Les ennemis détruits restent détruits si tu perds une vie.
 - 10 missions dessinées à la main, puis des missions générées à l'infini.
 
