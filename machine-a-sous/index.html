@@ -190,9 +190,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   const START = 100000; // 1000 € en centimes
   const total = SYMBOLS.reduce((s, x) => s + x.weight, 0);
   const pick = () => { let r = Math.random() * total; for (const s of SYMBOLS) { if ((r -= s.weight) < 0) return s; } return SYMBOLS[0]; };
-  // 1 fois sur 10 : trois 1 centime. Sinon : jamais trois symboles identiques.
+  // 1 fois sur 3 : trois 1 centime. Sinon : jamais trois symboles identiques.
   const spinResult = () => {
-    if (Math.random() < 0.1) return [SYMBOLS[0], SYMBOLS[0], SYMBOLS[0]];
+    if (Math.random() < 1 / 3) return [SYMBOLS[0], SYMBOLS[0], SYMBOLS[0]];
     let r;
     do { r = [pick(), pick(), pick()]; } while (r[0].id === r[1].id && r[1].id === r[2].id);
     return r;
@@ -255,7 +255,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       $('last').textContent = fmt(gain);
       msg.className = 'msg win';
       msg.textContent = gain === 1 ? 'الجاكبوت… سنتيم واحد! 😅' : `ربحت! +${fmt(gain)}`;
-      if (gain === 1) { const c = $('celebrate'); c.hidden = false; clearTimeout(c._t); c._t = setTimeout(() => { c.hidden = true; }, 10000); }
+      if (gain === 1) { const c = $('celebrate'); c.hidden = false; }
       if (gain >= 5000) { lights.classList.add('on'); setTimeout(() => lights.classList.remove('on'), 2500); }
     } else {
       msg.className = 'msg lose';
