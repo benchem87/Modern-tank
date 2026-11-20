@@ -255,7 +255,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       $('last').textContent = fmt(gain);
       msg.className = 'msg win';
       msg.textContent = gain === 1 ? 'Jackpot… d’un centime ! 😅' : `GAGNÉ ! +${fmt(gain)}`;
-      if (gain === 1) { const c = $('celebrate'); c.hidden = false; clearTimeout(c._t); c._t = setTimeout(() => { c.hidden = true; }, 4000); }
+      if (gain === 1) { const c = $('celebrate'); c.hidden = false; clearTimeout(c._t); c._t = setTimeout(() => { c.hidden = true; }, 10000); }
       if (gain >= 5000) { lights.classList.add('on'); setTimeout(() => lights.classList.remove('on'), 2500); }
     } else {
       msg.className = 'msg lose';
