@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Le Bandit Manchot</title>
+<title>اربح سلفة يا حاج</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Lalezar&family=Inter:wght@400;600;800&display=swap">
 <style>
 /* Layout: one centered cabinet — marquee, three reels, payout table, controls. Single dark casino look. */
 :root {
@@ -47,7 +47,7 @@ body {
 .lights.on i { animation: blink .5s infinite alternate; }
 .lights.on i:nth-child(odd) { animation-delay: .25s; }
 @keyframes blink { to { opacity: 1; box-shadow: 0 0 10px var(--gold); } }
-h1 { font-family: var(--display); font-weight: 400; font-size: clamp(1.6rem, 7vw, 2.3rem); margin: 0; color: var(--gold); text-shadow: 0 3px 0 #8a5a00; letter-spacing: .02em; text-wrap: balance; }
+h1 { font-family: "Lalezar", var(--display); font-weight: 400; font-size: clamp(1.6rem, 7vw, 2.3rem); margin: 0; color: var(--gold); text-shadow: 0 3px 0 #8a5a00; letter-spacing: .02em; text-wrap: balance; }
 .tag { margin: 0; color: var(--muted); font-size: .85rem; }
 
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -124,7 +124,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 <main class="cabinet">
   <header class="marquee">
     <div class="lights" id="lights"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-    <h1>Le Bandit Manchot</h1>
+    <h1 dir="rtl" lang="ar">اربح سلفة يا حاج</h1>
     <p class="tag">Aligne trois symboles identiques pour gagner</p>
   </header>
 
