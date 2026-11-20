@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Bandit Manchot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;600;800&display=swap">
+<style>
+/* Layout: one centered cabinet — marquee, three reels, payout table, controls. Single dark casino look. */
+:root {
+  --bg: #12091f;
+  --cabinet: #2a1240;
+  --cabinet-edge: #4b2270;
+  --reel: #fdf8ef;
+  --ink: #f6eefc;
+  --muted: #b9a5cc;
+  --gold: #f5c542;
+  --red: #e2384d;
+  --win: #36d68a;
+  --display: "Bungee", "Impact", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  background: radial-gradient(ellipse at top, #2b1145 0%, var(--bg) 60%) fixed, var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 40px;
+}
+.cabinet {
+  max-width: 520px; margin: 0 auto;
+  background: linear-gradient(180deg, var(--cabinet-edge), var(--cabinet));
+  border: 3px solid var(--gold);
+  border-radius: 28px 28px 14px 14px;
+  padding: 20px 18px 22px;
+  box-shadow: 0 0 0 6px #1a0b2a, 0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(245,197,66,.15);
+  display: grid; gap: 18px;
+}
+.marquee { text-align: center; display: grid; gap: 6px; }
+.lights { display: flex; justify-content: center; gap: 10px; }
+.lights i { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); opacity: .35; }
+.lights.on i { animation: blink .5s infinite alternate; }
+.lights.on i:nth-child(odd) { animation-delay: .25s; }
+@keyframes blink { to { opacity: 1; box-shadow: 0 0 10px var(--gold); } }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(1.6rem, 7vw, 2.3rem); margin: 0; color: var(--gold); text-shadow: 0 3px 0 #8a5a00; letter-spacing: .02em; text-wrap: balance; }
+.tag { margin: 0; color: var(--muted); font-size: .85rem; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { background: #1a0b2a; border-radius: 10px; padding: 8px 12px; }
+.stat span { display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.stat b { font-family: var(--display); font-weight: 400; font-size: 1.35rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.window {
+  background: #0d0616; border-radius: 16px; padding: 12px;
+  border: 2px solid #000; position: relative;
+}
+.reels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.reel {
+  background: linear-gradient(180deg, #d9d2c4 0%, var(--reel) 25%, var(--reel) 75%, #d9d2c4 100%);
+  border-radius: 10px; aspect-ratio: 3 / 4; max-width: 100%;
+  display: grid; place-items: center; overflow: hidden;
+}
+.sym { width: 86%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; text-align: center;
+  font-family: var(--display); line-height: 1; color: #fff; border: 4px dashed rgba(255,255,255,.55);
+  box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+.sym small { display: block; font-size: .5em; }
+.sym { font-size: clamp(1rem, 5.5vw, 1.6rem); }
+.s-1 { background: #a26a3a; }      /* pièce de 1 centime, cuivre */
+.s-50 { background: #d9822b; }     /* billet de 50, orange */
+.s-100 { background: #3f9a5a; }    /* billet de 100, vert */
+.s-200 { background: #d4ad2a; color: #3a2700; border-color: rgba(58,39,0,.4); } /* billet de 200, jaune */
+.reel.spin .sym { filter: blur(1.5px); transform: translateY(0); animation: jiggle .08s infinite; }
+@keyframes jiggle { 50% { transform: translateY(6px); } }
+.reel.hit { box-shadow: 0 0 0 3px var(--win), 0 0 22px var(--win); }
+.payline { position: absolute; left: 6px; right: 6px; top: 50%; height: 2px; background: var(--red); opacity: .6; pointer-events: none; }
+
+.msg { min-height: 2.6em; text-align: center; font-weight: 800; font-size: 1.05rem; margin: 0; display: grid; place-items: center; }
+.msg.win { color: var(--win); }
+.msg.lose { color: var(--muted); font-weight: 600; }
+
+.controls { display: grid; gap: 10px; }
+.bet { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.bet label { color: var(--muted); font-size: .85rem; }
+.chip { font: 700 .9rem var(--body); padding: 8px 14px; border-radius: 999px; border: 2px solid var(--cabinet-edge); background: #1a0b2a; color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.spin-btn {
+  font-family: var(--display); font-size: 1.5rem; padding: 14px; border-radius: 14px; border: 0; cursor: pointer;
+  background: linear-gradient(180deg, #ff5a6e, var(--red)); color: #fff; box-shadow: 0 6px 0 #8c1424; letter-spacing: .05em;
+}
+.spin-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 #8c1424; }
+.spin-btn:disabled { filter: grayscale(.6); opacity: .7; cursor: not-allowed; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.reset { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font: 600 .85rem var(--body); justify-self: center; }
+
+.paytable { background: #1a0b2a; border-radius: 12px; padding: 12px 14px; }
+.paytable h2 { margin: 0 0 8px; font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.paytable table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.paytable td { padding: 5px 0; font-size: .92rem; }
+.paytable td:last-child { text-align: right; font-weight: 800; color: var(--gold); }
+.dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 3px; }
+.note { margin: 0; text-align: center; color: var(--muted); font-size: .75rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lights.on i, .reel.spin .sym { animation: none; }
+}
+</style>
+</head>
+<body>
+
+
+<main class="cabinet">
+  <header class="marquee">
+    <div class="lights" id="lights"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <h1>Le Bandit Manchot</h1>
+    <p class="tag">Aligne trois symboles identiques pour gagner</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><span>Solde</span><b id="balance">1 000,00 €</b></div>
+    <div class="stat"><span>Dernier gain</span><b id="last">0,00 €</b></div>
+  </div>
+
+  <div class="window">
+    <div class="reels">
+      <div class="reel" id="r0"></div>
+      <div class="reel" id="r1"></div>
+      <div class="reel" id="r2"></div>
+    </div>
+    <div class="payline"></div>
+  </div>
+
+  <p class="msg" id="msg" aria-live="polite">Choisis ta mise et lance !</p>
+
+  <div class="controls">
+    <div class="bet" role="group" aria-label="Mise">
+      <label>Mise :</label>
+      <button class="chip" id="bet1" data-bet="1" aria-pressed="false">1 €</button>
+      <button class="chip" id="bet5" data-bet="5" aria-pressed="true">5 €</button>
+      <button class="chip" id="bet10" data-bet="10" aria-pressed="false">10 €</button>
+    </div>
+    <button class="spin-btn" id="spin">LANCER</button>
+    <button class="reset" id="reset">Recharger 1 000 € de jetons</button>
+  </div>
+
+  <section class="paytable">
+    <h2>Table des gains (3 identiques)</h2>
+    <table>
+      <tr><td><span class="dot s-200"></span> 3 × 200 €</td><td>200 €</td></tr>
+      <tr><td><span class="dot s-100"></span> 3 × 100 €</td><td>100 €</td></tr>
+      <tr><td><span class="dot s-50"></span> 3 × 50 €</td><td>50 €</td></tr>
+      <tr><td><span class="dot s-1"></span> 3 × 1 centime</td><td>0,01 €</td></tr>
+      <tr><td colspan="2" style="padding-top:8px;color:var(--muted);font-weight:400;font-size:.8rem;text-align:left">Bonne chance… 😉</td></tr>
+    </table>
+  </section>
+
+  <p class="note">Jeu pour le fun, argent fictif. Ton solde est gardé dans ton navigateur.</p>
+</main>
+
+<script>
+(() => {
+  // Symboles : valeur gagnée (en centimes) et poids sur chaque rouleau
+  const SYMBOLS = [
+    { id: 1,     label: '1', unit: 'centime', weight: 40 },
+    { id: 5000,  label: '50', unit: '€',      weight: 30 },
+    { id: 10000, label: '100', unit: '€',     weight: 20 },
+    { id: 20000, label: '200', unit: '€',     weight: 10 },
+  ];
+  const cls = { 1: 's-1', 5000: 's-50', 10000: 's-100', 20000: 's-200' };
+  const START = 100000; // 1000 € en centimes
+  const total = SYMBOLS.reduce((s, x) => s + x.weight, 0);
+  const pick = () => { let r = Math.random() * total; for (const s of SYMBOLS) { if ((r -= s.weight) < 0) return s; } return SYMBOLS[0]; };
+  // 1 fois sur 10 : trois 1 centime. Sinon : jamais trois symboles identiques.
+  const spinResult = () => {
+    if (Math.random() < 0.1) return [SYMBOLS[0], SYMBOLS[0], SYMBOLS[0]];
+    let r;
+    do { r = [pick(), pick(), pick()]; } while (r[0].id === r[1].id && r[1].id === r[2].id);
+    return r;
+  };
+  const fmt = c => (c / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+  const reels = [0, 1, 2].map(i => document.getElementById('r' + i));
+  const $ = id => document.getElementById(id);
+  const spinBtn = $('spin'), msg = $('msg'), lights = $('lights');
+
+  let balance = START, bet = 500, busy = false;
+  try { const v = parseInt(localStorage.getItem('bandit-solde'), 10); if (!isNaN(v)) balance = v; } catch (e) {}
+  const save = () => { try { localStorage.setItem('bandit-solde', String(balance)); } catch (e) {} };
+
+  const draw = (el, s) => { el.innerHTML = `<div class="sym ${cls[s.id]}"><div>${s.label}<small>${s.unit}</small></div></div>`; };
+  const render = () => { $('balance').textContent = fmt(balance); spinBtn.disabled = busy || balance < bet; };
+
+  [SYMBOLS[3], SYMBOLS[3], SYMBOLS[3]].forEach((s, i) => draw(reels[i], s));
+
+  document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+    if (busy) return;
+    bet = Number(b.dataset.bet) * 100;
+    document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === b ? 'true' : 'false'));
+    render();
+    if (balance < bet) msg.textContent = 'Solde insuffisant pour cette mise.';
+  }));
+
+  $('reset').addEventListener('click', () => {
+    if (busy) return;
+    balance = START; save(); render();
+    $('last').textContent = fmt(0);
+    msg.className = 'msg'; msg.textContent = 'Jetons rechargés. Bonne chance !';
+  });
+
+  spinBtn.addEventListener('click', () => {
+    if (busy || balance < bet) return;
+    busy = true; balance -= bet; save(); render();
+    msg.className = 'msg'; msg.textContent = 'Ça tourne…';
+    reels.forEach(r => r.classList.remove('hit'));
+    const result = spinResult();
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stops = reduce ? [100, 200, 300] : [900, 1400, 1900];
+    let done = 0;
+    reels.forEach((el, i) => {
+      el.classList.add('spin');
+      const t = setInterval(() => draw(el, SYMBOLS[Math.floor(Math.random() * 4)]), 70);
+      setTimeout(() => {
+        clearInterval(t); el.classList.remove('spin'); draw(el, result[i]);
+        if (++done === 3) finish(result);
+      }, stops[i]);
+    });
+  });
+
+  function finish(result) {
+    const win = result[0].id === result[1].id && result[1].id === result[2].id;
+    if (win) {
+      const gain = result[0].id;
+      balance += gain; save();
+      reels.forEach(r => r.classList.add('hit'));
+      $('last').textContent = fmt(gain);
+      msg.className = 'msg win';
+      msg.textContent = gain === 1 ? 'Jackpot… d’un centime ! 😅' : `GAGNÉ ! +${fmt(gain)}`;
+      if (gain >= 5000) { lights.classList.add('on'); setTimeout(() => lights.classList.remove('on'), 2500); }
+    } else {
+      msg.className = 'msg lose';
+      msg.textContent = balance < bet ? 'Plus assez de jetons. Recharge pour rejouer.' : 'Perdu, retente ta chance !';
+    }
+    busy = false; render();
+  }
+
+  render();
+})();
+</script>
+
+</body>
+</html>
